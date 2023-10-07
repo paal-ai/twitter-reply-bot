@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# Load your Twitter API keys (preferably from environment variables, config file, or within the railway app)
+# Load your Twitter API keys
 TWITTER_API_KEY = os.getenv("TWITTER_API_KEY", "YourKey")
 TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET", "YourKey")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN", "YourKey")
@@ -19,7 +19,7 @@ TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN", "YourKey")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "YourKey")
 
-# TwitterBot class to help us organize our code and manage shared state
+# TwitterBot class
 class TwitterBot:
     def __init__(self):
         self.twitter_api = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN,
@@ -29,22 +29,26 @@ class TwitterBot:
                                          access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
                                          wait_on_rate_limit=True)
         self.twitter_me_id = self.get_me_id()
-        self.tweet_response_limit = 35 # How many tweets to respond to each time the program wakes up
+        self.tweet_response_limit = 35
 
-        # Initialize the language model w/ temperature of .5 to induce some creativity
+        # Initialize the language model
         self.llm = ChatOpenAI(temperature=.5, openai_api_key=OPENAI_API_KEY, model_name='gpt-4')
 
-        # For statics tracking for each run. This is not persisted anywhere, just logging
+        # For statics tracking for each run
         self.mentions_found = 0
         self.mentions_replied = 0
         self.mentions_replied_errors = 0
-    
+
+    # Returns the ID of the authenticated user for tweet creation purposes
+    def get_me_id(self):
+        return self.twitter_api.get_me()[0].id
+
     # (Other methods remain unchanged...)
 
     def respond_to_mention(self, mention, mentioned_conversation_tweet):
         response_text = self.generate_response(mentioned_conversation_tweet.text)
         
-        # Try and create the response to the tweet. If it fails, log it and move on
+        # Try and create the response to the tweet
         try:
             self.twitter_api.create_tweet(text=response_text, in_reply_to_tweet_id=mention.id)
             self.mentions_replied += 1
@@ -67,9 +71,8 @@ def job():
     bot.execute_replies()
 
 if __name__ == "__main__":
-    # Schedule the job to run every 6 minutes. Edit to your liking, but watch out for rate limits
+    # Schedule the job to run every 6 minutes
     schedule.every(6).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(1)
-
