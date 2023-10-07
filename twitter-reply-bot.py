@@ -43,6 +43,25 @@ class TwitterBot:
     def get_me_id(self):
         return self.twitter_api.get_me()[0].id
 
+    def respond_to_mentions(self):
+        mentions = self.get_mentions()
+
+        # If no mentions, just return
+        if not mentions:
+            print("No mentions found")
+            return
+        
+        self.mentions_found = len(mentions)
+
+        for mention in mentions[:self.tweet_response_limit]:
+            # Getting the mention's conversation tweet
+            mentioned_conversation_tweet = self.get_mention_conversation_tweet(mention)
+            
+            # If the mention *is* the conversation, skip it and don't respond
+            if mentioned_conversation_tweet.id != mention.id:
+                self.respond_to_mention(mention, mentioned_conversation_tweet)
+        return True
+
     # (Other methods remain unchanged...)
 
     def respond_to_mention(self, mention, mentioned_conversation_tweet):
